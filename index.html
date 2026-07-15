@@ -191,8 +191,9 @@
     let indexBloqueActual = 0; 
     let preguntasCargadasServidor = [];
     
-    // VARIABLE PARA CONTROL DE SALTO DE SECCIÓN
+    // VARIABLES DE CONTROL
     let seccionASaltarID = null;
+    let bloqueoGuardado = true; // Candado para evitar que eventos automáticos borren el progreso al cargar la página
 
     document.addEventListener("DOMContentLoaded", function() {
         const container = document.getElementById("dynamicQuestionsContainer");
@@ -214,7 +215,7 @@
                         
                         listaBloquesId = [0, ...seccionesUnicas];
 
-                        // Sección 0: Habeas Data (Texto legal completo e interactivo)
+                        // Sección 0: Habeas Data
                         const bloqueHabeas = document.createElement("div");
                         bloqueHabeas.className = "form-block bloque-seccion-0 active";
                         bloqueHabeas.innerHTML = `
@@ -380,7 +381,6 @@
                                 });
                             }
 
-                            // NUEVO: Forzar que los campos de texto nazcan vacíos y sin autocompletado del navegador
                             if (inputElement && inputElement.tagName === "INPUT") {
                                 inputElement.setAttribute("autocomplete", "off");
                                 inputElement.value = ""; 
@@ -398,9 +398,10 @@
                         const borradorIndex = localStorage.getItem(LOCAL_BLOQUE_KEY);
 
                         if (borradorRespuestas && borradorIndex) {
-                            // Recupera automáticamente sin mostrar la pantalla de decisión
-                            recuperarBorrador();
+                            document.getElementById("formContent").style.display = "none";
+                            document.getElementById("draftScreen").style.display = "block";
                         } else {
+                            bloqueoGuardado = false; // Desbloquea si no hay borrador previo
                             actualizarVisualizacionBloques();
                         }
                     }
@@ -441,6 +442,8 @@
     }
 
     function guardarProgresoEnTiempoReal() {
+        if (bloqueoGuardado) return; // Evita que los eventos del navegador sobrescriban el progreso al cargar
+
         actualizarEstadoBotonEnviar();
         const formulario = document.getElementById("sheetForm");
         const formData = new FormData(formulario);
@@ -456,13 +459,11 @@
         const borradorIndex = localStorage.getItem(LOCAL_BLOQUE_KEY);
 
         if (borradorRespuestas) {
-            const formulario = document.getElementById("sheetForm");
             for (const campoNombre in borradorRespuestas) {
-                const elementos = formulario.querySelectorAll(`[name="${campoNombre}"]`);
+                const elementos = document.getElementsByName(campoNombre); // Usamos getElementsByName para mayor estabilidad
                 elementos.forEach(elem => elem.value = borradorRespuestas[campoNombre]);
             }
             
-            // Inicializa la validación visual y de estado para correo y celular si existen
             const inputCorreo = document.getElementById("campoCorreo");
             if (inputCorreo) {
                 validarCorreoEnTiempoReal({ target: inputCorreo });
@@ -472,7 +473,6 @@
                 validarCelularSinEspacios({ target: inputCelular });
             }
 
-            // Validar Habeas Data para habilitar botón Siguiente si está en la sección 0
             const selectHabeas = document.getElementById("autorizaHabeas");
             if (selectHabeas && selectHabeas.value === "SI") {
                 document.getElementById("btnSiguiente").disabled = false;
@@ -485,6 +485,7 @@
         }
         document.getElementById("draftScreen").style.display = "none";
         document.getElementById("formContent").style.display = "block";
+        bloqueoGuardado = false; // Desbloquea una vez inyectada la información
         actualizarVisualizacionBloques();
     }
 
@@ -495,6 +496,7 @@
         indexBloqueActual = 0;
         document.getElementById("draftScreen").style.display = "none";
         document.getElementById("formContent").style.display = "block";
+        bloqueoGuardado = false; // Desbloquea el guardado
         actualizarVisualizacionBloques();
     }
 
@@ -748,6 +750,7 @@
         document.getElementById('decisionScreen').style.display = 'none';
         document.getElementById('exitScreen').style.display = 'none';
         document.getElementById('formContent').style.display = 'block';
+        bloqueoGuardado = false;
     }
 
     function salirDelFormulario() {
