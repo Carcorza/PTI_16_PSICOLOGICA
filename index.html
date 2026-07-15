@@ -126,7 +126,7 @@
             <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" alt="GLOBAL LIFE" class="logo-img">
             <div class="header-title">Formulario Datos Básicos</div>
             <div class="header-subtitle">GLOBAL LIFE AMBULANCIAS SAS</div>
-            <div class="header-department">Talento Humano Psicologia</div>
+            <div class="header-department">Talento Humano</div>
         </div>
 
         <form id="sheetForm">
@@ -176,7 +176,7 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3pLz0FceTRamAGKFS_0Q00e4zHxV3SdNtElZt3K4ZzbFUrtkuGwvJdM4hGog18Fs5uw/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwylnYg8Ehkha8AnKDLPAG5ImqmYOdYq2zYRJWU_I-4ogyfU4mpxPDwONWSnK5czHBEjQ/exec";
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
     const LOCAL_RESPUESTAS_KEY = "global_life_respuestas_borrador";
@@ -379,6 +379,7 @@
                                 });
                             }
 
+                            // NUEVO: Forzar que los campos de texto nazcan vacíos y sin autocompletado del navegador
                             if (inputElement && inputElement.tagName === "INPUT") {
                                 inputElement.setAttribute("autocomplete", "off");
                                 inputElement.value = ""; 
@@ -395,10 +396,9 @@
                         const borradorRespuestas = localStorage.getItem(LOCAL_RESPUESTAS_KEY);
                         const borradorIndex = localStorage.getItem(LOCAL_BLOQUE_KEY);
 
-                        // AQUÍ SE RESTAURA LA PANTALLA DE DECISIÓN DEL BORRADOR
                         if (borradorRespuestas && borradorIndex) {
-                            document.getElementById("formContent").style.display = "none";
-                            document.getElementById("draftScreen").style.display = "block";
+                            // Recupera automáticamente sin mostrar la pantalla de decisión
+                            recuperarBorrador();
                         } else {
                             actualizarVisualizacionBloques();
                         }
@@ -461,6 +461,7 @@
                 elementos.forEach(elem => elem.value = borradorRespuestas[campoNombre]);
             }
             
+            // Inicializa la validación visual y de estado para correo y celular si existen
             const inputCorreo = document.getElementById("campoCorreo");
             if (inputCorreo) {
                 validarCorreoEnTiempoReal({ target: inputCorreo });
@@ -470,6 +471,7 @@
                 validarCelularSinEspacios({ target: inputCelular });
             }
 
+            // Validar Habeas Data para habilitar botón Siguiente si está en la sección 0
             const selectHabeas = document.getElementById("autorizaHabeas");
             if (selectHabeas && selectHabeas.value === "SI") {
                 document.getElementById("btnSiguiente").disabled = false;
@@ -489,18 +491,7 @@
         localStorage.removeItem(LOCAL_RESPUESTAS_KEY);
         localStorage.removeItem(LOCAL_BLOQUE_KEY);
         document.getElementById("sheetForm").reset();
-
-        // FORZAR LA LIMPIEZA ABSOLUTA DE TODOS LOS CAMPOS
-        document.querySelectorAll('#sheetForm input, #sheetForm select').forEach(c => { 
-            c.value = ""; 
-            c.className = ""; 
-        });
-        document.querySelectorAll('.error-texto').forEach(s => s.style.display = "none");
-        
-        correoValido = false; 
-        celularValido = false;
         indexBloqueActual = 0;
-
         document.getElementById("draftScreen").style.display = "none";
         document.getElementById("formContent").style.display = "block";
         actualizarVisualizacionBloques();
@@ -744,16 +735,9 @@
         localStorage.removeItem(LOCAL_RESPUESTAS_KEY);
         localStorage.removeItem(LOCAL_BLOQUE_KEY);
         document.getElementById('sheetForm').reset();
-        
-        // FORZAR LIMPIEZA ABSOLUTA
-        document.querySelectorAll('#sheetForm input, #sheetForm select').forEach(c => { 
-            c.value = ""; 
-            c.className = ""; 
-        });
+        document.querySelectorAll('#sheetForm input, #sheetForm select').forEach(c => { c.value = ""; c.className = ""; });
         document.querySelectorAll('.error-texto').forEach(s => s.style.display = "none");
-        
-        correoValido = false; 
-        celularValido = false;
+        correoValido = false; celularValido = false;
         
         const bAnt = document.querySelector(`.bloque-seccion-${listaBloquesId[indexBloqueActual]}`);
         if (bAnt) bAnt.classList.remove("active");
