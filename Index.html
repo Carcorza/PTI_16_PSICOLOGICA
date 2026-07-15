@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  </head>
+  <body>
+    <section class="section">
+      <div class="container">
+        <h1 class="title">Planeación Vacaciones 2027</h1>
+        <div class="field">
+          <label class="label">Cédula de Ciudadanía</label>
+          <div class="control">
+            <input id="cedula" class="input" type="text" placeholder="Ingresa tu identificación">
+          </div>
+        </div>
+        <button class="button is-link" onclick="buscarEmpleado()">Consultar Disponibilidad</button>
+        
+        <div id="resultado" style="margin-top: 20px; display: none;">
+          <div class="notification is-info is-light">
+            Hola <strong id="nombreEmpl"></strong>. Tu área es: <strong id="areaEmpl"></strong>.
+          </div>
+          <div class="field">
+            <label class="label">Mes de Disfrute</label>
+            <div class="select">
+              <select id="mesSeleccionado">
+                <option value="0">Enero</option>
+                <option value="1">Febrero</option>
+                <!-- Agregar el resto de meses -->
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Días a solicitar (Mínimo 8)</label>
+            <input id="dias" class="input" type="number" min="8" max="15" value="15">
+            <p class="help">Si pides menos de 15, el resto se pagará en dinero.</p>
+          </div>
+          <button class="button is-success" onclick="guardarVacaciones()">Confirmar Reserva</button>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      function buscarEmpleado() {
+        var cedula = document.getElementById('cedula').value;
+        google.script.run.withSuccessHandler(mostrarDatos).obtenerInfoEmpleado(cedula);
+      }
+
+      function mostrarDatos(empleado) {
+        if(empleado) {
+          document.getElementById('nombreEmpl').innerText = empleado.nombre;
+          document.getElementById('areaEmpl').innerText = empleado.dependencia;
+          document.getElementById('resultado').style.display = 'block';
+        } else {
+          alert("Cédula no encontrada.");
+        }
+      }
+    </script>
+  </body>
+</html>
