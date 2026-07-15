@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario PTI_16_PSICOLOGIA - Global Life</title>
+    <title>Formulario Datos Básicos - Global Life</title>
     <style>
         body {
             font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -83,7 +83,6 @@
         .pantalla-borrador { display: none; text-align: center; padding: 10px 0; }
         .pantalla-borrador p { font-size: 16px; color: #333333; margin-bottom: 20px; line-height: 1.4; }
 
-        /* DISEÑO DE CONTENEDOR HABEAS DATA MEJORADO */
         .habeas-data-container { 
             text-align: justify; 
             font-size: 13.5px; 
@@ -93,26 +92,7 @@
             border: 2px solid #bcd0f7; 
             padding: 15px; 
             border-radius: 6px; 
-            max-height: 220px; 
-            overflow-y: auto; 
-            -webkit-overflow-scrolling: touch; /* Scroll táctil ultra fluido en iOS/Android */
             margin-bottom: 20px; 
-        }
-        
-        /* DISEÑO DE LA BARRA DE SCROLL DE HABEAS DATA PARA QUE SEA SIEMPRE VISIBLE */
-        .habeas-data-container::-webkit-scrollbar {
-            width: 8px;
-        }
-        .habeas-data-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        .habeas-data-container::-webkit-scrollbar-thumb {
-            background: #bcd0f7;
-            border-radius: 4px;
-        }
-        .habeas-data-container::-webkit-scrollbar-thumb:hover {
-            background: #2263fc;
         }
 
         .habeas-data-title { text-align: center; font-weight: bold; font-size: 15px; margin-bottom: 12px; color: #2956b1; }
@@ -180,7 +160,6 @@
         <div class="header-container">
             <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" alt="GLOBAL LIFE" class="logo-img">
             <div class="header-title" style="margin-top: 10px;">GLOBAL LIFE AMBULANCIAS SAS</div>
-            <div class="header-title" style="margin-top: 10px;">PTI_16_PSICOLOGIA</div>
             <div class="header-department">Talento Humano</div>
         </div>
         <div style="margin-top: 25px; padding: 15px; background-color: #e8f4fd; border-left: 4px solid #2263fc; border-radius: 4px; text-align: center;">
@@ -192,12 +171,12 @@
     <hr class="footer-divider">
     <div class="footer-text-container">
         <a href="https://www.glambulancias.com" target="_blank" class="footer-link">www.glambulancias.com</a>
-        <div style="margin-top: 4px;">Todos los derechos reservados &copy; 2026</div>
+        <div style="margin-top: 4px;">Todos los derechos reservados © 2026</div>
     </div>
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyaHJqYxaaf_-MEhsNtL0AcS0eDB5z8GStp07XvtIb-9mmyLszZ9p4qEtfYGuOrSgyYJQ/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3pLz0FceTRamAGKFS_0Q00e4zHxV3SdNtElZt3K4ZzbFUrtkuGwvJdM4hGog18Fs5uw/exec";
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
     const LOCAL_RESPUESTAS_KEY = "global_life_respuestas_borrador";
@@ -400,6 +379,11 @@
                                 });
                             }
 
+                            if (inputElement && inputElement.tagName === "INPUT") {
+                                inputElement.setAttribute("autocomplete", "off");
+                                inputElement.value = ""; 
+                            }
+
                             if (!formGroup.contains(inputElement)) {
                                 formGroup.appendChild(inputElement);
                             }
@@ -411,6 +395,7 @@
                         const borradorRespuestas = localStorage.getItem(LOCAL_RESPUESTAS_KEY);
                         const borradorIndex = localStorage.getItem(LOCAL_BLOQUE_KEY);
 
+                        // AQUÍ SE RESTAURA LA PANTALLA DE DECISIÓN DEL BORRADOR
                         if (borradorRespuestas && borradorIndex) {
                             document.getElementById("formContent").style.display = "none";
                             document.getElementById("draftScreen").style.display = "block";
@@ -476,7 +461,6 @@
                 elementos.forEach(elem => elem.value = borradorRespuestas[campoNombre]);
             }
             
-            // Inicializa la validación visual y de estado para correo y celular si existen
             const inputCorreo = document.getElementById("campoCorreo");
             if (inputCorreo) {
                 validarCorreoEnTiempoReal({ target: inputCorreo });
@@ -484,6 +468,11 @@
             const inputCelular = document.getElementById("campoCelular");
             if (inputCelular) {
                 validarCelularSinEspacios({ target: inputCelular });
+            }
+
+            const selectHabeas = document.getElementById("autorizaHabeas");
+            if (selectHabeas && selectHabeas.value === "SI") {
+                document.getElementById("btnSiguiente").disabled = false;
             }
 
             if (borradorIndex) {
@@ -500,7 +489,18 @@
         localStorage.removeItem(LOCAL_RESPUESTAS_KEY);
         localStorage.removeItem(LOCAL_BLOQUE_KEY);
         document.getElementById("sheetForm").reset();
+
+        // FORZAR LA LIMPIEZA ABSOLUTA DE TODOS LOS CAMPOS
+        document.querySelectorAll('#sheetForm input, #sheetForm select').forEach(c => { 
+            c.value = ""; 
+            c.className = ""; 
+        });
+        document.querySelectorAll('.error-texto').forEach(s => s.style.display = "none");
+        
+        correoValido = false; 
+        celularValido = false;
         indexBloqueActual = 0;
+
         document.getElementById("draftScreen").style.display = "none";
         document.getElementById("formContent").style.display = "block";
         actualizarVisualizacionBloques();
@@ -577,7 +577,6 @@
         }
     }
 
-    /* NUEVA FUNCIÓN DE VALIDACIÓN INTELIGENTE (RESPETA CAMPOS OBLIGATORIOS Y OPCIONALES) */
     function validarBloqueActual() {
         const idSeccionActual = listaBloquesId[indexBloqueActual];
         const bloqueDom = document.querySelector(`.bloque-seccion-${idSeccionActual}`);
@@ -588,7 +587,6 @@
             return (selectHabeas.value === "SI");
         }
 
-        // Seleccionamos TODOS los campos del bloque actual (requeridos u opcionales)
         const campos = bloqueDom.querySelectorAll("input, select");
         let bloqueValido = true;
 
@@ -597,17 +595,13 @@
             const valor = campo.value ? campo.value.trim() : "";
 
             if (esRequerido && valor === "") {
-                // Si es obligatorio y está vacío -> Error
                 bloqueValido = false;
                 campo.classList.add("campo-invalido");
             } else if (!esRequerido && valor === "") {
-                // Si NO es obligatorio y está vacío -> Es válido, se limpia cualquier alerta previa
                 campo.classList.remove("campo-invalido");
             } else {
-                // Si el campo tiene contenido escrito (sea requerido u opcional)
                 campo.classList.remove("campo-invalido");
                 
-                // Validamos formatos específicos si hay texto
                 if (campo.id === "campoCorreo") {
                     const esValido = validarCorreoEnTiempoReal({ target: campo });
                     if (!esValido) {
@@ -648,7 +642,6 @@
         btn.innerText = "Enviar Registro";
     }
 
-    /* MEJORA EN TIEMPO REAL PARA CORREO (RESPETA SI ES REQUERIDO O NO) */
     function validarCorreoEnTiempoReal(e) {
         const i = (e && e.target) ? e.target : document.getElementById("campoCorreo");
         if (!i) return true;
@@ -660,7 +653,7 @@
         if (v === "") { 
             i.className = ""; 
             if (eDiv) eDiv.style.display = "none"; 
-            correoValido = !esRequerido; // Si es opcional, el estado vacío se marca como válido (true)
+            correoValido = !esRequerido; 
         } else if (emailRegex.test(v)) { 
             i.className = "campo-valido"; 
             if (eDiv) eDiv.style.display = "none"; 
@@ -673,7 +666,6 @@
         return correoValido;
     }
 
-    /* MEJORA EN TIEMPO REAL PARA CELULAR (RESPETA SI ES REQUERIDO O NO) */
     function validarCelularSinEspacios(e) {
         const input = (e && e.target) ? e.target : document.getElementById("campoCelular");
         if (!input) return true;
@@ -690,7 +682,7 @@
         if (nums.length === 0) { 
             input.className = ""; 
             if (err) err.style.display = "none"; 
-            celularValido = !esRequerido; // Si es opcional, el estado vacío se marca como válido (true)
+            celularValido = !esRequerido; 
         } else if (nums.length === 10) { 
             input.className = "campo-valido"; 
             if (err) err.style.display = "none"; 
@@ -752,9 +744,16 @@
         localStorage.removeItem(LOCAL_RESPUESTAS_KEY);
         localStorage.removeItem(LOCAL_BLOQUE_KEY);
         document.getElementById('sheetForm').reset();
-        document.querySelectorAll('#sheetForm input, #sheetForm select').forEach(c => { c.value = ""; c.className = ""; });
+        
+        // FORZAR LIMPIEZA ABSOLUTA
+        document.querySelectorAll('#sheetForm input, #sheetForm select').forEach(c => { 
+            c.value = ""; 
+            c.className = ""; 
+        });
         document.querySelectorAll('.error-texto').forEach(s => s.style.display = "none");
-        correoValido = false; celularValido = false;
+        
+        correoValido = false; 
+        celularValido = false;
         
         const bAnt = document.querySelector(`.bloque-seccion-${listaBloquesId[indexBloqueActual]}`);
         if (bAnt) bAnt.classList.remove("active");
