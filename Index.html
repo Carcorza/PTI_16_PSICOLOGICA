@@ -1,60 +1,778 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <base target="_top">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
-  </head>
-  <body>
-    <section class="section">
-      <div class="container">
-        <h1 class="title">Planeación Vacaciones 2027</h1>
-        <div class="field">
-          <label class="label">Cédula de Ciudadanía</label>
-          <div class="control">
-            <input id="cedula" class="input" type="text" placeholder="Ingresa tu identificación">
-          </div>
-        </div>
-        <button class="button is-link" onclick="buscarEmpleado()">Consultar Disponibilidad</button>
-        
-        <div id="resultado" style="margin-top: 20px; display: none;">
-          <div class="notification is-info is-light">
-            Hola <strong id="nombreEmpl"></strong>. Tu área es: <strong id="areaEmpl"></strong>.
-          </div>
-          <div class="field">
-            <label class="label">Mes de Disfrute</label>
-            <div class="select">
-              <select id="mesSeleccionado">
-                <option value="0">Enero</option>
-                <option value="1">Febrero</option>
-                <!-- Agregar el resto de meses -->
-              </select>
-            </div>
-          </div>
-          <div class="field">
-            <label class="label">Días a solicitar (Mínimo 8)</label>
-            <input id="dias" class="input" type="number" min="8" max="15" value="15">
-            <p class="help">Si pides menos de 15, el resto se pagará en dinero.</p>
-          </div>
-          <button class="button is-success" onclick="guardarVacaciones()">Confirmar Reserva</button>
-        </div>
-      </div>
-    </section>
-
-    <script>
-      function buscarEmpleado() {
-        var cedula = document.getElementById('cedula').value;
-        google.script.run.withSuccessHandler(mostrarDatos).obtenerInfoEmpleado(cedula);
-      }
-
-      function mostrarDatos(empleado) {
-        if(empleado) {
-          document.getElementById('nombreEmpl').innerText = empleado.nombre;
-          document.getElementById('areaEmpl').innerText = empleado.dependencia;
-          document.getElementById('resultado').style.display = 'block';
-        } else {
-          alert("Cédula no encontrada.");
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario PTI_16_PSICOLOGIA - Global Life</title>
+    <style>
+        body {
+            font-family: 'Calibri', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            color: #333333;
         }
-      }
-    </script>
-  </body>
+        .form-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(41, 86, 177, 0.1);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            border-top: 5px solid #2263fc;
+        }
+        
+        .header-container { text-align: center; margin-bottom: 25px; }
+        .logo-img { max-width: 140px; height: auto; margin-bottom: 15px; display: inline-block; }
+        .header-title { margin: 0; color: #2956b1; font-size: 20px; font-weight: 600; line-height: 1.3; }
+        .header-subtitle { margin: 4px 0 0 0; color: #333333; font-size: 17px; font-weight: 800; text-transform: uppercase; line-height: 1.3; letter-spacing: 0.5px; }
+        .header-department { margin: 4px 0 0 0; color: #659bee; font-size: 15px; font-weight: bold; line-height: 1.3; text-transform: uppercase; }
+        
+        .form-block { display: none; }
+        .form-block.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #2956b1; font-weight: 600; }
+        .requerido { color: #e74c3c; margin-left: 3px; }
+        
+        input[type="text"], input[type="email"], input[type="tel"], input[type="number"], input[type="date"], select {
+            width: 100%; padding: 10px; border: 2px solid #bcd0f7; border-radius: 4px; box-sizing: border-box; font-size: 16px; transition: border-color 0.3s, box-shadow 0.3s; background-color: #fff; color: #333333;
+        }
+        
+        input[type="text"] { text-transform: uppercase; }
+        input[type="email"] { text-transform: lowercase; }
+        input:focus, select:focus { outline: none; border-color: #2263fc; box-shadow: 0 0 5px rgba(34, 99, 207, 0.3); }
+        
+        input.campo-invalido, select.campo-invalido { border-color: #e74c3c !important; background-color: #fff6f6; }
+        input.campo-valido, select.campo-valido { border-color: #069334 !important; background-color: #f4fbf7; }
+        .error-texto { color: #e74c3c; font-size: 12px; margin-top: 5px; display: none; font-weight: 600; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.3s, transform 0.1s; }
+        button:active { transform: scale(0.98); }
+        .btn-primary { background-color: #2263fc; color: white; }
+        .btn-primary:hover { background-color: #2956b1; }
+        .btn-primary:disabled { background-color: #659bee; cursor: not-allowed; opacity: 0.7; }
+        .btn-secondary { background-color: #95a5a6; color: white; }
+        .btn-secondary:hover { background-color: #7f8c8d; }
+
+        .mensaje { margin-top: 15px; padding: 12px; border-radius: 4px; text-align: center; display: none; font-weight: 600; }
+        .exito { background-color: #d4f2e1; color: #069334; display: block; border: 1px solid #069334; }
+        .error { background-color: #f8d7da; color: #721c24; display: block; border: 1px solid #f5c6cb; }
+        
+        .cargando-preguntas { text-align: center; color: #659bee; font-style: italic; margin-bottom: 15px; font-weight: bold; }
+
+        .pantalla-decision { display: none; text-align: center; }
+        .pantalla-decision h3 { color: #2956b1; margin-bottom: 20px; }
+        .btn-decision-container { display: flex; gap: 15px; justify-content: center; }
+        .btn-green { background-color: #069334; color: white; }
+        .btn-green:hover { background-color: #057a2b; }
+        .btn-danger { background-color: #e74c3c; color: white; }
+        .btn-danger:hover { background-color: #c0392b; }
+
+        .pantalla-borrador { display: none; text-align: center; padding: 10px 0; }
+        .pantalla-borrador p { font-size: 16px; color: #333333; margin-bottom: 20px; line-height: 1.4; }
+
+        /* DISEÑO DE CONTENEDOR HABEAS DATA MEJORADO */
+        .habeas-data-container { 
+            text-align: justify; 
+            font-size: 13.5px; 
+            line-height: 1.6; 
+            color: #333333; 
+            background-color: #f8fafd; 
+            border: 2px solid #bcd0f7; 
+            padding: 15px; 
+            border-radius: 6px; 
+            max-height: 220px; 
+            overflow-y: auto; 
+            -webkit-overflow-scrolling: touch; /* Scroll táctil ultra fluido en iOS/Android */
+            margin-bottom: 20px; 
+        }
+        
+        /* DISEÑO DE LA BARRA DE SCROLL DE HABEAS DATA PARA QUE SEA SIEMPRE VISIBLE */
+        .habeas-data-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .habeas-data-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .habeas-data-container::-webkit-scrollbar-thumb {
+            background: #bcd0f7;
+            border-radius: 4px;
+        }
+        .habeas-data-container::-webkit-scrollbar-thumb:hover {
+            background: #2263fc;
+        }
+
+        .habeas-data-title { text-align: center; font-weight: bold; font-size: 15px; margin-bottom: 12px; color: #2956b1; }
+        .habeas-data-subtitle { text-align: center; font-weight: bold; font-size: 13px; margin-bottom: 15px; color: #659bee; }
+
+        .footer-divider { border: 0; height: 1px; background-color: #bcd0f7; margin: 25px 0 15px 0; width: 100%; }
+        .footer-text-container { text-align: center; font-size: 12px; color: #777777; line-height: 1.5; }
+        .footer-link { color: #2263fc; text-decoration: none; font-weight: 600; transition: color 0.2s; }
+        .footer-link:hover { text-decoration: underline; color: #2956b1; }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <div id="draftScreen" class="pantalla-borrador">
+        <div class="header-container">
+            <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" alt="GLOBAL LIFE" class="logo-img">
+            <div class="header-title">Borrador Detectado</div>
+            <div class="header-subtitle" style="font-size: 15px;">GLOBAL LIFE AMBULANCIAS SAS</div>
+        </div>
+        <p>Hemos encontrado información de un intento de registro anterior sin finalizar.</p>
+        <p><strong>¿Deseas continuar en la sección donde quedaste o prefieres iniciar de nuevo desde cero?</strong></p>
+        <div class="btn-decision-container" style="flex-direction: column;">
+            <button class="btn-green" type="button" onclick="recuperarBorrador()">Continuar donde quedé</button>
+            <button class="btn-secondary" type="button" onclick="descartarBorrador()">Iniciar de nuevo desde cero</button>
+        </div>
+    </div>
+
+    <div id="formContent">
+        <div class="header-container">
+            <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" alt="GLOBAL LIFE" class="logo-img">
+            <div class="header-title">Formulario Datos Básicos</div>
+            <div class="header-subtitle">GLOBAL LIFE AMBULANCIAS SAS</div>
+            <div class="header-department">Talento Humano</div>
+        </div>
+
+        <form id="sheetForm">
+            <div id="dynamicQuestionsContainer">
+                <div class="cargando-preguntas">Cargando formulario estructurado...</div>
+            </div>
+
+            <div class="btn-group" id="navigationButtons" style="display: none;">
+                <button type="button" class="btn-secondary" id="btnAtras" onclick="cambiarBloque(-1)">Atrás</button>
+                <button type="button" class="btn-primary" id="btnSiguiente" onclick="cambiarBloque(1)">Siguiente</button>
+                <button type="button" class="btn-primary" id="btnEnviar" style="display: none;" onclick="enviarFormulario()">Enviar Registro</button>
+            </div>
+        </form>
+    </div>
+    
+    <div id="statusMensaje" class="mensaje"></div>
+
+    <div id="decisionScreen" class="pantalla-decision">
+        <div class="header-container">
+            <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" alt="GLOBAL LIFE" class="logo-img" style="max-width: 110px;">
+        </div>
+        <h3>¡Registro Exitoso!</h3>
+        <p>¿Qué desea hacer a continuación?</p>
+        <div class="btn-decision-container">
+            <button class="btn-green" type="button" onclick="reiniciarFormulario()">Llenar otro formulario</button>
+            <button class="btn-danger" type="button" onclick="salirDelFormulario()">Salir</button>
+        </div>
+    </div>
+
+    <div id="exitScreen" class="pantalla-decision">
+        <div class="header-container">
+            <img src="https://lh3.googleusercontent.com/d/1MjgNe-zgyiBPShxkwT5053JND1hc4jY8" alt="GLOBAL LIFE" class="logo-img">
+            <div class="header-title" style="margin-top: 10px;">GLOBAL LIFE AMBULANCIAS SAS</div>
+            <div class="header-title" style="margin-top: 10px;">PTI_16_PSICOLOGIA</div>
+            <div class="header-department">Talento Humano</div>
+        </div>
+        <div style="margin-top: 25px; padding: 15px; background-color: #e8f4fd; border-left: 4px solid #2263fc; border-radius: 4px; text-align: center;">
+            <p style="font-size: 16px; color: #2956b1; font-weight: 600; margin: 0;">¡Muchas gracias por completar el registro!</p>
+            <p style="font-size: 14px; color: #333333; margin: 8px 0 0 0;">El proceso ha finalizado correctamente y sus datos han sido guardados de manera segura.</p>
+        </div>
+    </div>
+
+    <hr class="footer-divider">
+    <div class="footer-text-container">
+        <a href="https://www.glambulancias.com" target="_blank" class="footer-link">www.glambulancias.com</a>
+        <div style="margin-top: 4px;">Todos los derechos reservados &copy; 2026</div>
+    </div>
+</div>
+
+<script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxXtasux9k79DxgM8D0bRc6WfTK7zD8Mr8EkJ5AqWZ8bkgWGS4YBQ-Yvr6P6dYMcM5A/exec";
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    const LOCAL_RESPUESTAS_KEY = "global_life_respuestas_borrador";
+    const LOCAL_BLOQUE_KEY = "global_life_bloque_actual";
+
+    let correoValido = false;
+    let celularValido = false;
+    let tieneCelular = false; 
+
+    let listaBloquesId = []; 
+    let indexBloqueActual = 0; 
+    let preguntasCargadasServidor = [];
+    
+    // VARIABLE PARA CONTROL DE SALTO DE SECCIÓN
+    let seccionASaltarID = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const container = document.getElementById("dynamicQuestionsContainer");
+        const navButtons = document.getElementById("navigationButtons");
+
+        fetch(`${WEB_APP_URL}?getQuestions=true`)
+            .then(response => response.json())
+            .then(data => {
+                container.innerHTML = ""; 
+                
+                if (data.result === "success") {
+                    if (data.preguntas && data.preguntas.length > 0) {
+                        preguntasCargadasServidor = data.preguntas;
+                        
+                        const seccionesUnicas = [...new Set(data.preguntas
+                            .filter(p => parseInt(p.seccion, 10) !== 0)
+                            .map(p => parseInt(p.seccion, 10))
+                        )].sort((a, b) => a - b);
+                        
+                        listaBloquesId = [0, ...seccionesUnicas];
+
+                        // Sección 0: Habeas Data (Texto legal completo e interactivo)
+                        const bloqueHabeas = document.createElement("div");
+                        bloqueHabeas.className = "form-block bloque-seccion-0 active";
+                        bloqueHabeas.innerHTML = `
+                            <div class="habeas-data-container">
+                                <div class="habeas-data-title">HABEAS DATA</div>
+                                <div class="habeas-data-subtitle">(Ley 1581 de 2012)</div>
+                                <p>De conformidad con lo previsto en la "Ley Estatutaria 1581 de 2012", y sus "Decretos reglamentarios" 1377 de 2013 y 1074 de 2015 capitulo 25; autorizo de manera previa, informada ,consentida, voluntaria e inequívoca como Titular de datos a la IPS "GLOBAL LIFE AMBULANCIAS SAS" para que realice el respectivo tratamiento de mis datos personales, mis imágenes y/o videos, y en especial aquellos definidos como datos sensibles, para que sean incorporados en una base de datos, responsabilidad de "GLOBAL LIFE AMBULANCIAS SAS"; tratados con las siguientes finalidades; académicos, empresariales, investigativos, científicos, de proyección social, comerciales, culturales, recreativos, deportivos, de interés general nacional e internacional, y para las actividades que se enmarquen dentro del objeto social, académico e institucional.</p>
+                                <p>De igual modo, declaro que no me encuentro obligado a autorizar el tratamiento de mis datos personales sensibles y que he sido informado que puedo ejercer los derechos de acceso, corrección, supresión, revocación o reclamo por infracción sobre mis datos, mediante escrito dirigido a "GLOBAL LIFE AMBULANCIAS SAS" en la dirección de correo electrónico notificacionesglobal@glambulancias.com, indicando en el "Asunto"; el derecho que deseo ejercer; o mediante correo ordinario remitido a la dirección, Cl 163 16 C 62 en la ciudad de Bogotá D.C. con base en la política de tratamiento de protección de datos, a la cual podré tener acceso en la página web http://www.glambulancias.com/</p>
+                            </div>
+                            <div class="form-group">
+                                <label style="text-align: center; font-weight: bold; margin-bottom: 12px;">¿Autoriza el tratamiento de datos, según lo anteriormente mencionado?<span class="requerido">*</span></label>
+                                <select id="autorizaHabeas" name="¿Autoriza el tratamiento de datos, según lo anteriormente mencionado?" required style="border: 2px solid #2263fc;">
+                                    <option value="" disabled selected>Seleccione una opción</option>
+                                    <option value="SI">SI</option>
+                                    <option value="NO">NO</option>
+                                </select>
+                            </div>
+                        `;
+                        container.appendChild(bloqueHabeas);
+                        bloqueHabeas.querySelector("#autorizaHabeas").addEventListener("change", manejarRespuestaHabeasData);
+
+                        seccionesUnicas.forEach(secId => {
+                            const bloqueDiv = document.createElement("div");
+                            bloqueDiv.className = `form-block bloque-seccion-${secId}`;
+                            container.appendChild(bloqueDiv);
+                        });
+
+                        data.preguntas.forEach(preg => {
+                            const seccionId = parseInt(preg.seccion, 10);
+                            if (seccionId === 0) return; 
+
+                            const targetBlock = container.querySelector(`.bloque-seccion-${seccionId}`);
+                            if (!targetBlock) return; 
+
+                            const formGroup = document.createElement("div");
+                            formGroup.className = "form-group";
+
+                            const valorObligatorio = preg.obligatoria ? preg.obligatoria.toString().toLowerCase().trim() : "";
+                            const esObligatoria = (valorObligatorio === "si" || valorObligatorio === "sí");
+
+                            const label = document.createElement("label");
+                            label.innerHTML = preg.texto + (esObligatoria ? '<span class="requerido">*</span>' : '');
+                            formGroup.appendChild(label);
+
+                            const nombrePregunta = preg.texto.toLowerCase().trim();
+                            const tipoPreguntaStr = preg.tipo ? preg.tipo.toLowerCase() : "";
+                            let inputElement = null;
+
+                            if (nombrePregunta.includes("fecha") || tipoPreguntaStr === "fecha" || tipoPreguntaStr === "date") {
+                                inputElement = document.createElement("input");
+                                inputElement.type = "date";
+                                inputElement.name = preg.texto;
+                                if (esObligatoria) inputElement.required = true;
+
+                            } else if (nombrePregunta.includes("correo") || nombrePregunta.includes("email")) {
+                                inputElement = document.createElement("input");
+                                inputElement.type = "email";
+                                inputElement.name = preg.texto;
+                                inputElement.id = "campoCorreo";
+                                inputElement.placeholder = "ejemplo@correo.com";
+                                if (esObligatoria) inputElement.required = true;
+                                inputElement.autocomplete = "email";
+                                
+                                const errorSpan = document.createElement("span");
+                                errorSpan.className = "error-texto";
+                                errorSpan.id = "errorCorreoTexto";
+                                errorSpan.innerText = "Por favor, introduce un dominio válido";
+                                formGroup.appendChild(inputElement);
+                                formGroup.appendChild(errorSpan);
+
+                                inputElement.addEventListener("input", convertirAMinusculas);
+                                inputElement.addEventListener("input", validarCorreoEnTiempoReal);
+                                inputElement.addEventListener("change", validarCorreoEnTiempoReal);
+
+                            } else if (nombrePregunta.includes("celular") || nombrePregunta.includes("telefono") || nombrePregunta.includes("móvil")) {
+                                tieneCelular = true;
+                                inputElement = document.createElement("input");
+                                inputElement.type = "tel"; 
+                                inputElement.name = preg.texto;
+                                inputElement.id = "campoCelular";
+                                inputElement.placeholder = "3008123125";
+                                inputElement.maxLength = 10;
+                                if (esObligatoria) inputElement.required = true;
+                                
+                                const errorSpan = document.createElement("span");
+                                errorSpan.className = "error-texto";
+                                errorSpan.id = "errorCelularTexto";
+                                errorSpan.innerText = "Debe tener exactamente 10 dígitos (sin espacios)";
+                                formGroup.appendChild(inputElement);
+                                formGroup.appendChild(errorSpan);
+
+                                inputElement.addEventListener("input", validarCelularSinEspacios);
+
+                            } else if (tipoPreguntaStr === "numero") {
+                                inputElement = document.createElement("input");
+                                inputElement.type = "tel"; 
+                                inputElement.name = preg.texto;
+                                inputElement.placeholder = "Ingrese un número (máx. 10 dígitos)";
+                                inputElement.maxLength = 10;
+                                if (esObligatoria) inputElement.required = true;
+
+                                formGroup.appendChild(inputElement);
+
+                                inputElement.addEventListener("input", function(e) {
+                                    const cursor = e.target.selectionStart;
+                                    let nums = e.target.value.replace(/\D/g, ""); 
+                                    if (nums.length > 10) nums = nums.slice(0, 10);
+                                    e.target.value = nums;
+                                    e.target.setSelectionRange(cursor, cursor); 
+                                    
+                                    if (nums.trim() !== "") {
+                                        e.target.classList.remove("campo-invalido");
+                                    }
+                                    guardarProgresoEnTiempoReal();
+                                });
+
+                            } else if (preg.tipo === "seleccion" || preg.tipo === "Seleccion") {
+                                inputElement = document.createElement("select");
+                                inputElement.name = preg.texto;
+                                if (esObligatoria) inputElement.required = true;
+
+                                const optDefault = document.createElement("option");
+                                optDefault.value = ""; optDefault.disabled = true; optDefault.selected = true; optDefault.innerText = "Seleccione una opción";
+                                inputElement.appendChild(optDefault);
+
+                                if (preg.opciones) {
+                                    preg.opciones.forEach(opt => {
+                                        const option = document.createElement("option");
+                                        option.value = opt; option.innerText = opt;
+                                        inputElement.appendChild(option);
+                                    });
+                                }
+
+                            } else {
+                                inputElement = document.createElement("input");
+                                inputElement.type = "text";
+                                inputElement.name = preg.texto;
+                                inputElement.placeholder = "Escriba su Respuesta";
+                                if (esObligatoria) inputElement.required = true;
+
+                                inputElement.addEventListener("input", convertirAMayusculas);
+                            }
+
+                            if (tipoPreguntaStr !== "numero") {
+                                inputElement.addEventListener(inputElement.tagName === "SELECT" ? "change" : "input", function(e) {
+                                    if (e.target.value.trim() !== "") {
+                                        e.target.classList.remove("campo-invalido");
+                                    }
+                                    guardarProgresoEnTiempoReal();
+                                });
+                            }
+
+                            if (nombrePregunta === "¿tiene hijos?" || nombrePregunta === "tiene hijos" || nombrePregunta === "tiene hijos?") {
+                                inputElement.setAttribute("id", "preguntaTieneHijos");
+                                
+                                const indexActual = listaBloquesId.indexOf(seccionId);
+                                if (indexActual !== -1 && indexActual + 1 < listaBloquesId.length) {
+                                    seccionASaltarID = listaBloquesId[indexActual + 1];
+                                }
+                                
+                                inputElement.addEventListener("change", () => {
+                                    actualizarVisualizacionBloques(); 
+                                });
+                            }
+
+                            if (!formGroup.contains(inputElement)) {
+                                formGroup.appendChild(inputElement);
+                            }
+                            targetBlock.appendChild(formGroup);
+                        });
+                        
+                        navButtons.style.display = "flex";
+
+                        const borradorRespuestas = localStorage.getItem(LOCAL_RESPUESTAS_KEY);
+                        const borradorIndex = localStorage.getItem(LOCAL_BLOQUE_KEY);
+
+                        if (borradorRespuestas && borradorIndex) {
+                            document.getElementById("formContent").style.display = "none";
+                            document.getElementById("draftScreen").style.display = "block";
+                        } else {
+                            actualizarVisualizacionBloques();
+                        }
+                    }
+                }
+            });
+    });
+
+    function manejarRespuestaHabeasData() {
+        const select = document.getElementById("autorizaHabeas");
+        const btnSiguiente = document.getElementById("btnSiguiente");
+        const msgDiv = document.getElementById('statusMensaje');
+
+        if (select.value === "SI") {
+            btnSiguiente.disabled = false;
+            msgDiv.style.display = "none";
+            guardarProgresoEnTiempoReal();
+        } else if (select.value === "NO") {
+            btnSiguiente.disabled = true;
+            bloquearFormularioPorHabeasData();
+        }
+    }
+
+    function bloquearFormularioPorHabeasData() {
+        localStorage.removeItem(LOCAL_RESPUESTAS_KEY);
+        localStorage.removeItem(LOCAL_BLOQUE_KEY);
+        document.getElementById("formContent").style.display = "none";
+        
+        const msgDiv = document.getElementById('statusMensaje');
+        msgDiv.innerHTML = `
+            <div style="font-size: 16px; margin-bottom: 20px; line-height: 1.5; color: #333333;">
+                <strong>Registro Cancelado</strong><br><br>
+                Usted ha seleccionado que <strong>NO autoriza</strong> el tratamiento de sus datos. Es un requisito legal obligatorio.<br>
+            </div>
+            <button class="btn-green" type="button" onclick="reiniciarFormulario()" style="margin-top: 10px; width: auto;">Iniciar de nuevo</button>
+        `;
+        msgDiv.className = "mensaje error";
+        msgDiv.style.display = "block";
+    }
+
+    function guardarProgresoEnTiempoReal() {
+        actualizarEstadoBotonEnviar();
+        const formulario = document.getElementById("sheetForm");
+        const formData = new FormData(formulario);
+        const progreso = {};
+        for (const [key, value] of formData.entries()) progreso[key] = value;
+        
+        localStorage.setItem(LOCAL_RESPUESTAS_KEY, JSON.stringify(progreso));
+        localStorage.setItem(LOCAL_BLOQUE_KEY, indexBloqueActual.toString());
+    }
+
+    function recuperarBorrador() {
+        const borradorRespuestas = JSON.parse(localStorage.getItem(LOCAL_RESPUESTAS_KEY));
+        const borradorIndex = localStorage.getItem(LOCAL_BLOQUE_KEY);
+
+        if (borradorRespuestas) {
+            const formulario = document.getElementById("sheetForm");
+            for (const campoNombre in borradorRespuestas) {
+                const elementos = formulario.querySelectorAll(`[name="${campoNombre}"]`);
+                elementos.forEach(elem => elem.value = borradorRespuestas[campoNombre]);
+            }
+            
+            // Inicializa la validación visual y de estado para correo y celular si existen
+            const inputCorreo = document.getElementById("campoCorreo");
+            if (inputCorreo) {
+                validarCorreoEnTiempoReal({ target: inputCorreo });
+            }
+            const inputCelular = document.getElementById("campoCelular");
+            if (inputCelular) {
+                validarCelularSinEspacios({ target: inputCelular });
+            }
+
+            if (borradorIndex) {
+                indexBloqueActual = parseInt(borradorIndex, 10);
+                if (indexBloqueActual >= listaBloquesId.length) indexBloqueActual = 0;
+            }
+        }
+        document.getElementById("draftScreen").style.display = "none";
+        document.getElementById("formContent").style.display = "block";
+        actualizarVisualizacionBloques();
+    }
+
+    function descartarBorrador() {
+        localStorage.removeItem(LOCAL_RESPUESTAS_KEY);
+        localStorage.removeItem(LOCAL_BLOQUE_KEY);
+        document.getElementById("sheetForm").reset();
+        indexBloqueActual = 0;
+        document.getElementById("draftScreen").style.display = "none";
+        document.getElementById("formContent").style.display = "block";
+        actualizarVisualizacionBloques();
+    }
+
+    function cambiarBloque(direccion) {
+        if (direccion === 1 && !validarBloqueActual()) {
+            alert("Por favor, rellene todos los campos obligatorios marcados en rojo antes de continuar.");
+            return;
+        }
+
+        const idSeccionActual = listaBloquesId[indexBloqueActual];
+        const bloqueAnterior = document.querySelector(`.bloque-seccion-${idSeccionActual}`);
+        if (bloqueAnterior) bloqueAnterior.classList.remove("active");
+
+        let nuevoIndex = indexBloqueActual + direccion;
+
+        const selectTieneHijos = document.getElementById("preguntaTieneHijos");
+        const omitirHijos = selectTieneHijos && (selectTieneHijos.value.toUpperCase() === "NO" || selectTieneHijos.value.toUpperCase() === "N0");
+        
+        if (omitirHijos && listaBloquesId[nuevoIndex] === seccionASaltarID) {
+            nuevoIndex += direccion; 
+            const bloqueSaltado = document.querySelector(`.bloque-seccion-${seccionASaltarID}`);
+            if(bloqueSaltado){
+                const campos = bloqueSaltado.querySelectorAll("input, select");
+                campos.forEach(c => c.value = "");
+            }
+        }
+
+        indexBloqueActual = nuevoIndex;
+        localStorage.setItem(LOCAL_BLOQUE_KEY, indexBloqueActual.toString());
+        actualizarVisualizacionBloques();
+    }
+
+    function actualizarVisualizacionBloques() {
+        const idSeccionNueva = listaBloquesId[indexBloqueActual];
+        const bloqueNuevo = document.querySelector(`.bloque-seccion-${idSeccionNueva}`);
+        
+        document.querySelectorAll(".form-block").forEach(b => b.classList.remove("active"));
+        if (bloqueNuevo) bloqueNuevo.classList.add("active");
+
+        const btnAtras = document.getElementById("btnAtras");
+        const btnSiguiente = document.getElementById("btnSiguiente");
+        const btnEnviar = document.getElementById("btnEnviar");
+
+        btnAtras.style.display = (indexBloqueActual === 0) ? "none" : "block";
+
+        let haySiguiente = false;
+        let indexEval = indexBloqueActual + 1;
+        const selectTieneHijos = document.getElementById("preguntaTieneHijos");
+        const omitirHijos = selectTieneHijos && (selectTieneHijos.value.toUpperCase() === "NO" || selectTieneHijos.value.toUpperCase() === "N0");
+
+        if (omitirHijos && listaBloquesId[indexEval] === seccionASaltarID) {
+            indexEval++;
+        }
+        
+        if (indexEval < listaBloquesId.length) {
+            haySiguiente = true;
+        }
+
+        if (indexBloqueActual === 0) {
+            const selectHabeas = document.getElementById("autorizaHabeas");
+            btnSiguiente.style.display = "block";
+            btnEnviar.style.display = "none";
+            btnSiguiente.disabled = (selectHabeas.value !== "SI");
+        } else if (!haySiguiente) {
+            btnSiguiente.style.display = "none";
+            btnEnviar.style.display = "block";
+            actualizarEstadoBotonEnviar();
+        } else {
+            btnSiguiente.style.display = "block";
+            btnSiguiente.disabled = false;
+            btnEnviar.style.display = "none";
+        }
+    }
+
+    /* NUEVA FUNCIÓN DE VALIDACIÓN INTELIGENTE (RESPETA CAMPOS OBLIGATORIOS Y OPCIONALES) */
+    function validarBloqueActual() {
+        const idSeccionActual = listaBloquesId[indexBloqueActual];
+        const bloqueDom = document.querySelector(`.bloque-seccion-${idSeccionActual}`);
+        if (!bloqueDom) return true;
+
+        if (idSeccionActual === 0) {
+            const selectHabeas = document.getElementById("autorizaHabeas");
+            return (selectHabeas.value === "SI");
+        }
+
+        // Seleccionamos TODOS los campos del bloque actual (requeridos u opcionales)
+        const campos = bloqueDom.querySelectorAll("input, select");
+        let bloqueValido = true;
+
+        campos.forEach(campo => {
+            const esRequerido = campo.hasAttribute("required");
+            const valor = campo.value ? campo.value.trim() : "";
+
+            if (esRequerido && valor === "") {
+                // Si es obligatorio y está vacío -> Error
+                bloqueValido = false;
+                campo.classList.add("campo-invalido");
+            } else if (!esRequerido && valor === "") {
+                // Si NO es obligatorio y está vacío -> Es válido, se limpia cualquier alerta previa
+                campo.classList.remove("campo-invalido");
+            } else {
+                // Si el campo tiene contenido escrito (sea requerido u opcional)
+                campo.classList.remove("campo-invalido");
+                
+                // Validamos formatos específicos si hay texto
+                if (campo.id === "campoCorreo") {
+                    const esValido = validarCorreoEnTiempoReal({ target: campo });
+                    if (!esValido) {
+                        bloqueValido = false;
+                        campo.classList.add("campo-invalido");
+                    }
+                }
+                if (campo.id === "campoCelular") {
+                    const esValido = validarCelularSinEspacios({ target: campo });
+                    if (!esValido) {
+                        bloqueValido = false;
+                        campo.classList.add("campo-invalido");
+                    }
+                }
+            }
+        });
+
+        return bloqueValido;
+    }
+
+    function convertirAMayusculas(e) {
+        const s = e.target.selectionStart, end = e.target.selectionEnd;
+        e.target.value = e.target.value.toUpperCase();
+        e.target.setSelectionRange(s, end);
+    }
+
+    function convertirAMinusculas(e) {
+        const s = e.target.selectionStart, end = e.target.selectionEnd;
+        e.target.value = e.target.value.toLowerCase();
+        e.target.setSelectionRange(s, end);
+    }
+
+    function actualizarEstadoBotonEnviar() {
+        const btn = document.getElementById("btnEnviar");
+        if (!btn) return;
+        
+        btn.disabled = false; 
+        btn.innerText = "Enviar Registro";
+    }
+
+    /* MEJORA EN TIEMPO REAL PARA CORREO (RESPETA SI ES REQUERIDO O NO) */
+    function validarCorreoEnTiempoReal(e) {
+        const i = (e && e.target) ? e.target : document.getElementById("campoCorreo");
+        if (!i) return true;
+        
+        const eDiv = i.parentNode.querySelector(".error-texto") || document.getElementById("errorCorreoTexto");
+        const v = i.value.trim();
+        const esRequerido = i.hasAttribute("required");
+
+        if (v === "") { 
+            i.className = ""; 
+            if (eDiv) eDiv.style.display = "none"; 
+            correoValido = !esRequerido; // Si es opcional, el estado vacío se marca como válido (true)
+        } else if (emailRegex.test(v)) { 
+            i.className = "campo-valido"; 
+            if (eDiv) eDiv.style.display = "none"; 
+            correoValido = true; 
+        } else { 
+            i.className = "campo-invalido"; 
+            if (eDiv) eDiv.style.display = "block"; 
+            correoValido = false; 
+        }
+        return correoValido;
+    }
+
+    /* MEJORA EN TIEMPO REAL PARA CELULAR (RESPETA SI ES REQUERIDO O NO) */
+    function validarCelularSinEspacios(e) {
+        const input = (e && e.target) ? e.target : document.getElementById("campoCelular");
+        if (!input) return true;
+        
+        const err = input.parentNode.querySelector(".error-texto") || document.getElementById("errorCelularTexto");
+        const s = input.selectionStart;
+        let nums = input.value.replace(/\D/g, ""); 
+        if (nums.length > 10) nums = nums.slice(0, 10);
+        input.value = nums; 
+        if (e && e.target) input.setSelectionRange(s, s);
+        
+        const esRequerido = input.hasAttribute("required");
+
+        if (nums.length === 0) { 
+            input.className = ""; 
+            if (err) err.style.display = "none"; 
+            celularValido = !esRequerido; // Si es opcional, el estado vacío se marca como válido (true)
+        } else if (nums.length === 10) { 
+            input.className = "campo-valido"; 
+            if (err) err.style.display = "none"; 
+            celularValido = true; 
+        } else { 
+            input.className = "campo-invalido"; 
+            if (err) err.style.display = "block"; 
+            celularValido = false; 
+        }
+        return celularValido;
+    }
+
+    function enviarFormulario() {
+        if (!validarBloqueActual()) {
+            alert("Por favor rellene los campos obligatorios marcados en rojo antes de enviar.");
+            return;
+        }
+
+        const btn = document.getElementById('btnEnviar');
+        const msgDiv = document.getElementById('statusMensaje');
+        
+        btn.disabled = true;
+        btn.innerText = "Enviando registro...";
+        msgDiv.style.display = "none";
+
+        const formElement = document.getElementById('sheetForm');
+        const formData = new FormData(formElement);
+        const urlParams = new URLSearchParams();
+        
+        for (const [key, val] of formData.entries()) {
+            if (key.toLowerCase().trim() !== "marca temporal" && val.trim() !== "") {
+                urlParams.append(key, val);
+            }
+        }
+
+        fetch(`${WEB_APP_URL}?${urlParams.toString()}`, { method: 'GET', mode: 'cors' })
+        .then(response => response.json())
+        .then(data => {
+            if(data.result === 'success') {
+                localStorage.removeItem(LOCAL_RESPUESTAS_KEY);
+                localStorage.removeItem(LOCAL_BLOQUE_KEY);
+                document.getElementById('formContent').style.display = 'none';
+                document.getElementById('decisionScreen').style.display = 'block';
+            } else {
+                msgDiv.innerText = "Error al guardar: " + (data.error || "");
+                msgDiv.className = "mensaje error";
+                msgDiv.style.display = "block";
+                btn.disabled = false; btn.innerText = "Enviar Registro";
+            }
+        })
+        .catch(error => {
+            msgDiv.innerText = "Error de conexión con el servidor.";
+            msgDiv.className = "mensaje error"; msgDiv.style.display = "block";
+            btn.disabled = false; btn.innerText = "Enviar Registro";
+        });
+    }
+
+    function reiniciarFormulario() {
+        localStorage.removeItem(LOCAL_RESPUESTAS_KEY);
+        localStorage.removeItem(LOCAL_BLOQUE_KEY);
+        document.getElementById('sheetForm').reset();
+        document.querySelectorAll('#sheetForm input, #sheetForm select').forEach(c => { c.value = ""; c.className = ""; });
+        document.querySelectorAll('.error-texto').forEach(s => s.style.display = "none");
+        correoValido = false; celularValido = false;
+        
+        const bAnt = document.querySelector(`.bloque-seccion-${listaBloquesId[indexBloqueActual]}`);
+        if (bAnt) bAnt.classList.remove("active");
+        
+        indexBloqueActual = 0;
+        actualizarVisualizacionBloques();
+        document.getElementById('decisionScreen').style.display = 'none';
+        document.getElementById('exitScreen').style.display = 'none';
+        document.getElementById('formContent').style.display = 'block';
+    }
+
+    function salirDelFormulario() {
+        localStorage.removeItem(LOCAL_RESPUESTAS_KEY);
+        localStorage.removeItem(LOCAL_BLOQUE_KEY);
+        document.getElementById('decisionScreen').style.display = 'none';
+        document.getElementById('exitScreen').style.display = 'block';
+    }
+</script>
+
+</body>
 </html>
