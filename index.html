@@ -177,7 +177,7 @@
 </div>
 
 <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx5LJIzZGTdscdTnhBEOYnZhS0SA-2xZYm_KVfWXg00n4E1zY0ylnZNpikqbYC8R-hRZg/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwL_HVZ7rbXq5UQ_o41rSojGwvU-Sx69iUKPNRHvxoE0UzYqgg0SeFnPSDXXMh5xkBZNw/exec";
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
     const LOCAL_RESPUESTAS_KEY = "global_life_respuestas_borrador";
@@ -489,10 +489,21 @@
         actualizarVisualizacionBloques();
     }
 
+    // AQUI ESTÁ LA CORRECCIÓN: Función mejorada para forzar el vaciado de los campos visualmente
     function descartarBorrador() {
         localStorage.removeItem(LOCAL_RESPUESTAS_KEY);
         localStorage.removeItem(LOCAL_BLOQUE_KEY);
         document.getElementById("sheetForm").reset();
+
+        // Limpiar explícitamente todos los campos y sus clases de validación
+        document.querySelectorAll('#sheetForm input, #sheetForm select').forEach(c => { 
+            c.value = ""; 
+            c.className = ""; 
+        });
+        document.querySelectorAll('.error-texto').forEach(s => s.style.display = "none");
+        correoValido = false; 
+        celularValido = false;
+
         indexBloqueActual = 0;
         document.getElementById("draftScreen").style.display = "none";
         document.getElementById("formContent").style.display = "block";
@@ -689,7 +700,6 @@
         return celularValido;
     }
 
-    // FUNCIÓN MODIFICADA PARA ENVIAR POR POST EN LUGAR DE GET[cite: 1]
     function enviarFormulario() {
         if (!validarBloqueActual()) {
             alert("Por favor rellene los campos obligatorios marcados en rojo antes de enviar.");
@@ -707,19 +717,17 @@
         const formData = new FormData(formElement);
         const datosParaEnviar = {};
         
-        // Convertimos el FormData en un objeto JSON
         for (const [key, val] of formData.entries()) {
             if (key.toLowerCase().trim() !== "marca temporal" && val.trim() !== "") {
                 datosParaEnviar[key] = val;
             }
         }
 
-        // Enviamos los datos mediante POST para que no haya límite de caracteres en la URL
         fetch(WEB_APP_URL, { 
             method: 'POST', 
             mode: 'cors',
             headers: {
-                'Content-Type': 'text/plain;charset=utf-8' // Permite sortear la restricción de CORS en Apps Script
+                'Content-Type': 'text/plain;charset=utf-8' 
             },
             body: JSON.stringify(datosParaEnviar)
         })
